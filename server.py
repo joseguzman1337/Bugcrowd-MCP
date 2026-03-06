@@ -177,7 +177,25 @@ async def delete_report(id: str):
 # SUBMISSIONS
 @mcp.tool()
 async def get_submissions(query_params: dict = None):
-    """List all submissions. Supported filter keys: filter[program], filter[state], filter[severity], filter[assignee], filter[search], include, page[limit], page[offset], sort. Valid values for filter[state]: new, unresolved, informational, not_applicable, not_reproducible, out_of_scope. Note: 'blocked' is NOT a valid state value and will cause a 400 error."""
+    """List all submissions. Supported filter keys: filter[program], filter[state], filter[severity], filter[assignee], filter[search], include, page[limit], page[offset], sort.
+
+    IMPORTANT — filter[state] support:
+      - Supported (returns results): new, unresolved
+      - Unsupported (returns HTTP 400): informational, not_applicable, not_reproducible, out_of_scope
+      - Invalid (returns HTTP 400): blocked
+
+    To count submissions in unsupported states, retrieve all submissions without a state filter and count client-side.
+    """
+    # Guard against states known to cause HTTP 400 from the API
+    UNSUPPORTED_STATES = {"informational", "not_applicable", "not_reproducible", "out_of_scope"}
+    if query_params:
+        state = query_params.get("filter[state]")
+        if state in UNSUPPORTED_STATES:
+            return {
+                "error": f"The Bugcrowd API does not support filtering by state '{state}'. "
+                         f"Unsupported states: {sorted(UNSUPPORTED_STATES)}. "
+                         "To find submissions in this state, retrieve all submissions without a state filter and count client-side."
+            }
     return await bugcrowd_request("GET", "/submissions", params=query_params)
 
 
