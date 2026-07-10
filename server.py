@@ -401,4 +401,4 @@ async def get_engagement(id: str, query_params: dict = None):
 # ... more tools for other endpoints can be added in the same pattern ...
 
 if __name__ == "__main__":
-    mcp.run("stdio")
+    mcp.run()
